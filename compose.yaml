@@ -1,6 +1,6 @@
 # homebox-snap on the Synology NAS, next to Homebox.
-# It joins Homebox's Docker network to reach Homebox directly (no detour via Caddy),
-# and publishes one port on the NAS for Caddy to proxy snap.coppensvonck.eu to.
+# It joins Homebox's Docker network (which Caddy is also on): it reaches Homebox as homebox:7745,
+# and Caddy reaches it as homebox-snap:8000. No port is published on the NAS.
 
 services:
   homebox-snap:
@@ -10,8 +10,6 @@ services:
     environment:
       HOMEBOX_URL: ${HOMEBOX_URL:-http://homebox:7745}
       MAX_PHOTOS: ${MAX_PHOTOS:-12}
-    ports:
-      - "${SNAP_PORT:-3105}:8000"
     networks: [homebox]
     read_only: true
     tmpfs: [/tmp]
@@ -22,4 +20,4 @@ services:
 networks:
   homebox:
     external: true
-    name: ${HOMEBOX_NETWORK:-inventory_project_default}
+    name: ${HOMEBOX_NETWORK:-inventory_default}

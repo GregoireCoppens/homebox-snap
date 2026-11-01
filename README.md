@@ -12,37 +12,40 @@ adjust the quantity, **Save**. Location and tags stay set for the next item.
 
 ## Run it on the NAS
 
-```sh
-cd /volume1/docker
-git clone git@github.com:GregoireCoppens/homebox-snap.git && cd homebox-snap
-cp .env.example .env            # check HOMEBOX_NETWORK and HOMEBOX_URL (below)
-docker compose up -d --build
-```
-
-Find the right values for `.env`:
+The NAS has no `git`, so clone with a throwaway git container and a read-only deploy key:
 
 ```sh
-docker network ls | grep -i inventory                    # -> HOMEBOX_NETWORK
-docker ps --format '{{.Names}}\t{{.Ports}}' | grep -i homebox   # container name; Homebox listens on 7745 inside
+# once: a deploy key (add the .pub as a read-only Deploy key on GitHub)
+sudo mkdir -p /volume1/docker/.keys && sudo chmod 700 /volume1/docker/.keys
+sudo ssh-keygen -t ed25519 -N "" -C "nas homebox-snap" -f /volume1/docker/.keys/homebox-snap
+sudo cat /volume1/docker/.keys/homebox-snap.pub
+
+# clone (later: replace "clone git@...git" by "-C homebox-snap pull")
+sudo docker run --rm -v /volume1/docker:/work -v /volume1/docker/.keys:/keys:ro -w /work \
+  -e GIT_SSH_COMMAND="ssh -i /keys/homebox-snap -o StrictHostKeyChecking=accept-new -o UserKnownHostsFile=/dev/null" \
+  alpine/git clone git@github.com:GregoireCoppens/homebox-snap.git
+
+cd /volume1/docker/homebox-snap
+sudo docker compose up -d --build
 ```
 
-`HOMEBOX_URL` is `http://<homebox container or service name>:7745`.
+Defaults match the NAS: network `inventory_default`, Homebox at `http://homebox:7745`
+(override in a `.env` file, see `.env.example`).
 
 ## Caddy + DNS
 
-Add a site for `snap.coppensvonck.eu` that proxies to the NAS on `SNAP_PORT`, in the same style as the
-other services in your Caddyfile, for example:
+Inside the existing `*.coppensvonck.eu { ... }` block of the Caddyfile, next to the other services:
 
 ```
-snap.coppensvonck.eu {
-    reverse_proxy 192.168.2.95:3105
-}
+    @snap host snap.coppensvonck.eu
+    handle @snap {
+        reverse_proxy homebox-snap:8000
+    }
 ```
 
+Reload: `sudo docker exec caddy caddy reload --config /etc/caddy/Caddyfile`.
 Then a UniFi local DNS record `snap.coppensvonck.eu` → Caddy (192.168.2.250), and a tile on the
-home.coppensvonck.eu landing page.
-
-The camera only works over HTTPS, which Caddy provides.
+home.coppensvonck.eu landing page. The camera only works over HTTPS, which Caddy provides.
 
 ## On the phone
 
