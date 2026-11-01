@@ -1,0 +1,419 @@
+<!doctype html>
+<html lang="nl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#1f6f5c">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Snap">
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="icon" href="/static/icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="/static/icon-192.png">
+<title>Homebox Snap</title>
+<style>
+:root {
+  --bg: #f4f2ee; --card: #ffffff; --text: #1d1d1b; --muted: #6b6a66; --line: #e2dfd8;
+  --accent: #1f6f5c; --accent-text: #ffffff; --chip: #ebe8e1; --danger: #b3261e; --ok: #1f6f5c;
+  --radius: 14px;
+}
+@media (prefers-color-scheme: dark) {
+  :root { --bg: #151614; --card: #1f201e; --text: #ecebe7; --muted: #a09e98; --line: #33342f;
+          --accent: #3fae8f; --accent-text: #0d1a16; --chip: #2a2b28; --danger: #ef8a80; --ok: #6fd1b2; }
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; background: var(--bg); color: var(--text);
+  font: 16px/1.4 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+body { padding: env(safe-area-inset-top) 16px calc(24px + env(safe-area-inset-bottom)); max-width: 560px; margin: 0 auto; }
+header { display: flex; align-items: center; justify-content: space-between; padding: 12px 0 8px; }
+header h1 { font-size: 20px; margin: 0; letter-spacing: -0.01em; }
+header h1 span { color: var(--accent); }
+.link { background: none; border: 0; color: var(--muted); font: inherit; font-size: 14px; padding: 8px; }
+.card { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); padding: 14px; margin-bottom: 12px; }
+label.f { display: block; font-size: 13px; color: var(--muted); margin: 0 0 6px; font-weight: 600; text-transform: uppercase; letter-spacing: .04em; }
+input[type=text], input[type=email], input[type=password], input[type=search], select {
+  width: 100%; font: inherit; font-size: 17px; padding: 12px; border-radius: 10px;
+  border: 1px solid var(--line); background: var(--bg); color: var(--text); }
+select { appearance: none; background-image: linear-gradient(45deg, transparent 50%, var(--muted) 50%), linear-gradient(135deg, var(--muted) 50%, transparent 50%);
+  background-position: calc(100% - 20px) 50%, calc(100% - 14px) 50%; background-size: 6px 6px; background-repeat: no-repeat; padding-right: 36px; }
+.row { display: flex; gap: 10px; align-items: center; }
+.sticky-summary { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.sticky-summary .where { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sticky-summary .tags-line { color: var(--muted); font-size: 14px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.chips { display: flex; flex-wrap: wrap; gap: 8px; max-height: 168px; overflow-y: auto; padding: 2px 0; margin-top: 8px; }
+.chip { border: 1px solid var(--line); background: var(--chip); color: var(--text); border-radius: 999px; padding: 8px 12px; font: inherit; font-size: 15px; }
+.chip[aria-pressed=true] { background: var(--accent); color: var(--accent-text); border-color: var(--accent); }
+.camera { position: relative; border-radius: var(--radius); overflow: hidden; background: #000; aspect-ratio: 4 / 3; }
+.camera video { width: 100%; height: 100%; object-fit: cover; display: block; }
+.camera .msg { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; text-align: center; color: #ddd; padding: 20px; font-size: 15px; }
+.shutter-row { display: flex; align-items: center; justify-content: space-between; margin-top: 12px; }
+.shutter { width: 76px; height: 76px; border-radius: 50%; border: 5px solid var(--accent); background: var(--card); box-shadow: inset 0 0 0 4px var(--card); }
+.shutter:active { transform: scale(.94); background: var(--accent); }
+.side { min-width: 92px; }
+.thumbs { display: flex; gap: 8px; overflow-x: auto; padding-top: 12px; min-height: 12px; }
+.thumb { position: relative; flex: 0 0 auto; }
+.thumb img { width: 72px; height: 72px; object-fit: cover; border-radius: 10px; display: block; border: 2px solid transparent; }
+.thumb:first-child img { border-color: var(--accent); }
+.thumb button { position: absolute; top: -6px; right: -6px; width: 26px; height: 26px; border-radius: 50%; border: 0;
+  background: var(--danger); color: #fff; font-size: 16px; line-height: 26px; padding: 0; }
+.stepper { display: flex; align-items: center; border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
+.stepper button { width: 48px; height: 48px; border: 0; background: var(--chip); color: var(--text); font-size: 24px; }
+.stepper input { width: 56px; text-align: center; border: 0; border-radius: 0; background: var(--bg); padding: 12px 0; }
+.toggle { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 4px 0; font-size: 16px; }
+.toggle input { width: 52px; height: 30px; appearance: none; background: var(--line); border-radius: 999px; position: relative; transition: background .15s; flex: 0 0 auto; }
+.toggle input::after { content: ""; position: absolute; top: 3px; left: 3px; width: 24px; height: 24px; border-radius: 50%; background: #fff; transition: left .15s; }
+.toggle input:checked { background: var(--accent); }
+.toggle input:checked::after { left: 25px; }
+.btn { width: 100%; padding: 16px; border: 0; border-radius: var(--radius); font: inherit; font-size: 18px; font-weight: 700;
+  background: var(--accent); color: var(--accent-text); }
+.btn:disabled { opacity: .45; }
+.btn.secondary { background: var(--chip); color: var(--text); font-weight: 600; font-size: 16px; padding: 12px; }
+.err { color: var(--danger); font-size: 15px; margin: 8px 0 0; min-height: 1em; }
+.toast { position: fixed; left: 50%; top: calc(12px + env(safe-area-inset-top)); transform: translateX(-50%);
+  background: var(--accent); color: var(--accent-text); padding: 12px 16px; border-radius: 12px; font-size: 15px; font-weight: 600;
+  width: max-content; max-width: calc(100% - 32px); box-shadow: 0 6px 20px rgba(0,0,0,.18);
+  opacity: 0; pointer-events: none; transition: opacity .2s; z-index: 10; }
+.toast.show { opacity: 1; }
+.recent { list-style: none; margin: 0; padding: 0; }
+.recent li { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 8px 0; border-top: 1px solid var(--line); font-size: 15px; }
+.recent li:first-child { border-top: 0; }
+.recent .meta { color: var(--muted); font-size: 13px; }
+.hidden { display: none !important; }
+.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Homebox <span>Snap</span></h1>
+  <button class="link hidden" id="logoutBtn" type="button">Afmelden</button>
+</header>
+
+<!-- Login -->
+<section id="loginView" class="hidden">
+  <form class="card" id="loginForm" autocomplete="on">
+    <label class="f" for="u">E-mail</label>
+    <input id="u" type="email" autocomplete="username" required>
+    <div style="height:12px"></div>
+    <label class="f" for="p">Wachtwoord</label>
+    <input id="p" type="password" autocomplete="current-password" required>
+    <p class="err" id="loginErr"></p>
+    <button class="btn" type="submit">Aanmelden</button>
+  </form>
+  <p style="color:var(--muted);font-size:14px;text-align:center">Gebruik je gewone Homebox-account.</p>
+</section>
+
+<!-- Main -->
+<section id="mainView" class="hidden">
+
+  <div class="card">
+    <div class="sticky-summary">
+      <div style="min-width:0">
+        <div class="where" id="whereLine">Kies een locatie</div>
+        <div class="tags-line" id="tagsLine">Geen tags</div>
+      </div>
+      <button class="link" id="editStickyBtn" type="button" style="color:var(--accent);font-weight:600">Wijzigen</button>
+    </div>
+    <div id="stickyEditor" class="hidden" style="margin-top:12px">
+      <label class="f" for="locSelect">Locatie</label>
+      <select id="locSelect"></select>
+      <div style="height:12px"></div>
+      <label class="f" for="tagFilter">Tags</label>
+      <input id="tagFilter" type="search" placeholder="Zoek tag…">
+      <div class="chips" id="tagChips"></div>
+      <div id="typeWrap" class="hidden" style="margin-top:12px">
+        <label class="f" for="typeSelect">Soort</label>
+        <select id="typeSelect"></select>
+      </div>
+      <div style="height:12px"></div>
+      <button class="btn secondary" id="closeStickyBtn" type="button">Klaar</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="camera">
+      <video id="video" playsinline muted autoplay></video>
+      <div class="msg" id="camMsg">Camera starten…</div>
+    </div>
+    <div class="shutter-row">
+      <div class="side">
+        <button class="link" id="galleryBtn" type="button">Uit galerij</button>
+        <input class="sr" id="fileInput" type="file" accept="image/*" multiple>
+      </div>
+      <button class="shutter" id="shutter" type="button" aria-label="Foto nemen"></button>
+      <div class="side" style="text-align:right;color:var(--muted);font-size:14px" id="photoCount">0 foto's</div>
+    </div>
+    <div class="thumbs" id="thumbs"></div>
+  </div>
+
+  <form class="card" id="itemForm" autocomplete="off">
+    <label class="f" for="name">Naam</label>
+    <input id="name" type="text" enterkeyhint="done" placeholder="Bv. Boormachine Bosch" required>
+    <div style="height:14px"></div>
+    <div class="row" style="justify-content:space-between">
+      <label class="f" style="margin:0" for="qty">Aantal</label>
+      <div class="stepper">
+        <button type="button" id="qtyMinus" aria-label="Minder">−</button>
+        <input id="qty" type="text" inputmode="numeric" value="1">
+        <button type="button" id="qtyPlus" aria-label="Meer">+</button>
+      </div>
+    </div>
+    <div style="height:10px"></div>
+    <label class="toggle"><span>Label printen</span><input type="checkbox" id="printToggle"></label>
+    <p class="err" id="saveErr"></p>
+    <button class="btn" id="saveBtn" type="submit" disabled>Opslaan</button>
+  </form>
+
+  <div class="card hidden" id="recentCard">
+    <label class="f">Net toegevoegd</label>
+    <ul class="recent" id="recentList"></ul>
+  </div>
+</section>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+(() => {
+  const $ = id => document.getElementById(id);
+  const state = { user: "", ref: null, locationId: "", tagIds: [], typeId: "", print: false, photos: [], stream: null, saving: false };
+  const MAX_EDGE = 1600, QUALITY = 0.85;
+  let maxPhotos = 12;
+
+  // ---------- storage (per user, may be unavailable) ----------
+  const key = () => "hbsnap:" + (state.user || "anon");
+  function loadPrefs() {
+    try { return JSON.parse(localStorage.getItem(key()) || "{}"); } catch { return {}; }
+  }
+  function savePrefs() {
+    try { localStorage.setItem(key(), JSON.stringify({ locationId: state.locationId, tagIds: state.tagIds, typeId: state.typeId, print: state.print })); } catch {}
+  }
+
+  // ---------- api ----------
+  async function api(path, opts = {}) {
+    const r = await fetch(path, { credentials: "same-origin", ...opts });
+    let data = {};
+    try { data = await r.json(); } catch {}
+    if (r.status === 401 && path !== "/api/login") { showLogin(); throw new Error(data.error || "Niet aangemeld"); }
+    if (!r.ok) throw new Error(data.error || ("Fout " + r.status));
+    return data;
+  }
+
+  // ---------- toast ----------
+  let toastTimer;
+  function toast(text) {
+    const t = $("toast"); t.textContent = text; t.classList.add("show");
+    clearTimeout(toastTimer); toastTimer = setTimeout(() => t.classList.remove("show"), 3500);
+  }
+
+  // ---------- views ----------
+  function showLogin() {
+    stopCamera();
+    $("mainView").classList.add("hidden"); $("logoutBtn").classList.add("hidden");
+    $("loginView").classList.remove("hidden");
+  }
+  async function showMain() {
+    $("loginView").classList.add("hidden");
+    $("mainView").classList.remove("hidden"); $("logoutBtn").classList.remove("hidden");
+    await loadReference();
+    startCamera();
+  }
+
+  $("loginForm").addEventListener("submit", async e => {
+    e.preventDefault(); $("loginErr").textContent = "";
+    try {
+      await api("/api/login", { method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username: $("u").value.trim(), password: $("p").value }) });
+      $("p").value = "";
+      await boot();
+    } catch (err) { $("loginErr").textContent = err.message; }
+  });
+  $("logoutBtn").addEventListener("click", async () => {
+    try { await api("/api/logout", { method: "POST" }); } catch {}
+    showLogin();
+  });
+
+  // ---------- reference data & sticky choices ----------
+  async function loadReference() {
+    state.ref = await api("/api/reference");
+    const prefs = loadPrefs();
+    const locIds = new Set(state.ref.locations.map(l => l.id));
+    const tagIds = new Set(state.ref.tags.map(t => t.id));
+    state.locationId = locIds.has(prefs.locationId) ? prefs.locationId : "";
+    state.tagIds = (prefs.tagIds || []).filter(id => tagIds.has(id));
+    state.print = !!prefs.print;
+    const types = state.ref.itemTypes;
+    const preferredType = types.find(t => t.id === prefs.typeId) || types.find(t => /^(item|voorwerp)$/i.test(t.name)) || types[0];
+    state.typeId = preferredType ? preferredType.id : "";
+
+    const sel = $("locSelect");
+    sel.innerHTML = '<option value="">— Kies locatie —</option>' +
+      state.ref.locations.map(l => `<option value="${l.id}">${escapeHtml(l.path)}</option>`).join("");
+    sel.value = state.locationId;
+    $("typeSelect").innerHTML = types.map(t => `<option value="${t.id}">${escapeHtml(t.name)}</option>`).join("");
+    $("typeSelect").value = state.typeId;
+    $("typeWrap").classList.toggle("hidden", types.length < 2);
+    $("printToggle").checked = state.print;
+    renderChips(); renderSummary(); updateSave();
+    if (!state.locationId) $("stickyEditor").classList.remove("hidden");
+  }
+
+  function renderSummary() {
+    const loc = state.ref.locations.find(l => l.id === state.locationId);
+    $("whereLine").textContent = loc ? loc.path : "Kies een locatie";
+    const names = state.ref.tags.filter(t => state.tagIds.includes(t.id)).map(t => t.name);
+    $("tagsLine").textContent = names.length ? names.join(", ") : "Geen tags";
+  }
+  function renderChips() {
+    const q = $("tagFilter").value.trim().toLowerCase();
+    $("tagChips").innerHTML = state.ref.tags
+      .filter(t => !q || t.name.toLowerCase().includes(q) || state.tagIds.includes(t.id))
+      .map(t => `<button type="button" class="chip" data-id="${t.id}" aria-pressed="${state.tagIds.includes(t.id)}">${escapeHtml(t.name)}</button>`)
+      .join("") || '<span style="color:var(--muted);font-size:14px">Geen tags gevonden</span>';
+  }
+  $("tagChips").addEventListener("click", e => {
+    const b = e.target.closest(".chip"); if (!b) return;
+    const id = b.dataset.id;
+    state.tagIds = state.tagIds.includes(id) ? state.tagIds.filter(x => x !== id) : [...state.tagIds, id];
+    b.setAttribute("aria-pressed", state.tagIds.includes(id));
+    savePrefs(); renderSummary();
+  });
+  $("tagFilter").addEventListener("input", renderChips);
+  $("locSelect").addEventListener("change", e => { state.locationId = e.target.value; savePrefs(); renderSummary(); updateSave(); });
+  $("typeSelect").addEventListener("change", e => { state.typeId = e.target.value; savePrefs(); });
+  $("printToggle").addEventListener("change", e => { state.print = e.target.checked; savePrefs(); });
+  $("editStickyBtn").addEventListener("click", () => $("stickyEditor").classList.toggle("hidden"));
+  $("closeStickyBtn").addEventListener("click", () => { $("stickyEditor").classList.add("hidden"); $("tagFilter").value = ""; renderChips(); });
+
+  // ---------- camera ----------
+  async function startCamera() {
+    if (state.stream || document.hidden || $("mainView").classList.contains("hidden")) return;
+    const msg = $("camMsg");
+    if (!navigator.mediaDevices?.getUserMedia) { msg.textContent = "Camera niet beschikbaar. Gebruik ‘Uit galerij’."; return; }
+    try {
+      state.stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: { ideal: "environment" }, width: { ideal: 1920 }, height: { ideal: 1440 } }, audio: false });
+      $("video").srcObject = state.stream; msg.classList.add("hidden");
+    } catch (err) {
+      msg.classList.remove("hidden");
+      msg.textContent = "Geen toegang tot de camera. Sta camera toe in je browser, of gebruik ‘Uit galerij’.";
+    }
+  }
+  function stopCamera() {
+    if (state.stream) { state.stream.getTracks().forEach(t => t.stop()); state.stream = null; }
+    $("video").srcObject = null; $("camMsg").textContent = "Camera gepauzeerd"; $("camMsg").classList.remove("hidden");
+  }
+  document.addEventListener("visibilitychange", () => document.hidden ? stopCamera() : startCamera());
+
+  function scaledCanvas(source, w, h) {
+    const s = Math.min(1, MAX_EDGE / Math.max(w, h));
+    const c = document.createElement("canvas");
+    c.width = Math.round(w * s); c.height = Math.round(h * s);
+    c.getContext("2d").drawImage(source, 0, 0, c.width, c.height);
+    return c;
+  }
+  const toBlob = c => new Promise(res => c.toBlob(res, "image/jpeg", QUALITY));
+
+  async function addPhoto(blob) {
+    if (state.photos.length >= maxPhotos) { toast(`Maximaal ${maxPhotos} foto's per voorwerp`); return; }
+    state.photos.push({ blob, url: URL.createObjectURL(blob) });
+    renderThumbs(); updateSave();
+  }
+  $("shutter").addEventListener("click", async () => {
+    const v = $("video");
+    if (!state.stream || !v.videoWidth) { $("fileInput").click(); return; }
+    const blob = await toBlob(scaledCanvas(v, v.videoWidth, v.videoHeight));
+    if (navigator.vibrate) navigator.vibrate(30);
+    addPhoto(blob);
+  });
+  $("galleryBtn").addEventListener("click", () => $("fileInput").click());
+  $("fileInput").addEventListener("change", async e => {
+    for (const file of e.target.files) {
+      try {
+        const bmp = await createImageBitmap(file, { imageOrientation: "from-image" });
+        await addPhoto(await toBlob(scaledCanvas(bmp, bmp.width, bmp.height)));
+        bmp.close();
+      } catch { await addPhoto(file); }
+    }
+    e.target.value = "";
+  });
+  function renderThumbs() {
+    $("thumbs").innerHTML = state.photos.map((p, i) =>
+      `<div class="thumb"><img src="${p.url}" alt="Foto ${i + 1}"><button type="button" data-i="${i}" aria-label="Verwijder foto ${i + 1}">×</button></div>`).join("");
+    $("photoCount").textContent = state.photos.length === 1 ? "1 foto" : `${state.photos.length} foto's`;
+  }
+  $("thumbs").addEventListener("click", e => {
+    const b = e.target.closest("button[data-i]"); if (!b) return;
+    const [p] = state.photos.splice(+b.dataset.i, 1); URL.revokeObjectURL(p.url);
+    renderThumbs(); updateSave();
+  });
+
+  // ---------- item form ----------
+  const qty = () => Math.max(1, parseInt($("qty").value, 10) || 1);
+  $("qtyMinus").addEventListener("click", () => { $("qty").value = Math.max(1, qty() - 1); });
+  $("qtyPlus").addEventListener("click", () => { $("qty").value = qty() + 1; });
+  $("qty").addEventListener("blur", () => { $("qty").value = qty(); });
+  $("name").addEventListener("input", updateSave);
+  function updateSave() {
+    $("saveBtn").disabled = state.saving || !$("name").value.trim() || !state.locationId;
+    $("saveBtn").textContent = state.saving ? "Bezig met opslaan…" : (state.locationId ? "Opslaan" : "Kies eerst een locatie");
+  }
+
+  $("itemForm").addEventListener("submit", async e => {
+    e.preventDefault(); if ($("saveBtn").disabled) return;
+    $("saveErr").textContent = ""; state.saving = true; updateSave();
+    const fd = new FormData();
+    fd.append("name", $("name").value.trim());
+    fd.append("quantity", String(qty()));
+    fd.append("locationId", state.locationId);
+    if (state.typeId) fd.append("entityTypeId", state.typeId);
+    state.tagIds.forEach(id => fd.append("tagIds", id));
+    if (state.print) fd.append("print", "true");
+    state.photos.forEach((p, i) => fd.append("photos", p.blob, `photo-${i + 1}.jpg`));
+    try {
+      const res = await api("/api/items", { method: "POST", body: fd });
+      let msg = `Opgeslagen: ${res.name}`;
+      if (res.photos) msg += res.photos === 1 ? " · 1 foto" : ` · ${res.photos} foto's`;
+      if (res.failedPhotos) msg += ` · ${res.failedPhotos} foto('s) mislukt`;
+      if (res.printed === true) msg += " · label geprint";
+      if (res.printed === false) msg += " · label printen mislukt";
+      toast(msg);
+      addRecent(res);
+      state.photos.forEach(p => URL.revokeObjectURL(p.url)); state.photos = [];
+      $("name").value = ""; $("qty").value = "1"; renderThumbs();
+    } catch (err) { $("saveErr").textContent = err.message; }
+    finally { state.saving = false; updateSave(); }
+  });
+
+  // ---------- recent ----------
+  const recent = [];
+  function addRecent(item) {
+    recent.unshift(item); recent.length = Math.min(recent.length, 5);
+    $("recentCard").classList.remove("hidden");
+    $("recentList").innerHTML = recent.map(r =>
+      `<li><div><div>${escapeHtml(r.name)}</div><div class="meta">${r.assetId ? escapeHtml(String(r.assetId)) + " · " : ""}${r.photos} foto${r.photos === 1 ? "" : "'s"}</div></div>
+       <button type="button" class="chip" data-print="${r.id}">Label</button></li>`).join("");
+  }
+  $("recentList").addEventListener("click", async e => {
+    const b = e.target.closest("[data-print]"); if (!b) return;
+    b.disabled = true;
+    try { await api(`/api/items/${b.dataset.print}/print`, { method: "POST" }); toast("Label geprint"); }
+    catch (err) { toast(err.message); }
+    finally { b.disabled = false; }
+  });
+
+  function escapeHtml(s) { return String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c])); }
+
+  // ---------- boot ----------
+  async function boot() {
+    try { const cfg = await api("/api/config"); maxPhotos = cfg.maxPhotos || maxPhotos; } catch {}
+    try {
+      const me = await api("/api/me");
+      state.user = me.name || "user";
+      await showMain();
+    } catch { showLogin(); }
+  }
+  if ("serviceWorker" in navigator) navigator.serviceWorker.register("/sw.js").catch(() => {});
+  boot();
+})();
+</script>
+</body>
+</html>
