@@ -104,29 +104,29 @@ def test_reference_only_locations_with_paths(client):
     assert ref["itemTypes"] == [{"id": "ET-I", "name": "Item"}]
 
 
-def test_create_item_with_photos_tags_and_print(client, fake):
+def test_create_item_with_photos_and_tags(client, fake):
     login(client)
     r = client.post("/api/items",
                     data={"name": "Boormachine", "quantity": "2", "locationId": "L2", "entityTypeId": "ET-I",
-                          "tagIds": ["T1", "T2"], "print": "true"},
+                          "tagIds": ["T1", "T2"]},
                     files=[("photos", ("a.jpg", b"img1", "image/jpeg")), ("photos", ("b.jpg", b"img2", "image/jpeg"))])
     assert r.status_code == 201, r.text
     res = r.json()
-    assert res["photos"] == 2 and res["failedPhotos"] == 0 and res["printed"] is True
+    assert res["photos"] == 2 and res["failedPhotos"] == 0 and "printed" not in res
     created = fake.entities[res["id"]]
     assert created == {"name": "Boormachine", "parentId": "L2", "quantity": 2, "tagIds": ["T1", "T2"], "entityTypeId": "ET-I"}
     assert len(fake.attachments) == 2
     first = fake.attachments[0][1]
     assert b'name="primary"\r\n\r\ntrue' in first and b'name="type"\r\n\r\nphoto' in first
     assert b'name="primary"\r\n\r\nfalse' in fake.attachments[1][1]
-    assert fake.printed == [(res["id"], "true")]
+    assert fake.printed == []
 
 
-def test_create_item_without_print_or_photos(client, fake):
+def test_create_item_without_photos(client, fake):
     login(client)
     r = client.post("/api/items", data={"name": "Kabel", "locationId": "L3"})
     assert r.status_code == 201
-    assert r.json()["printed"] is None and fake.printed == [] and fake.attachments == []
+    assert fake.attachments == []
     assert fake.entities[r.json()["id"]]["quantity"] == 1
 
 
@@ -144,10 +144,10 @@ def test_failed_photo_is_reported_but_item_kept(client, fake):
     assert r.status_code == 201 and r.json()["failedPhotos"] == 1 and r.json()["photos"] == 0
 
 
-def test_reprint(client, fake):
+def test_no_print_endpoint(client, fake):
     login(client)
-    assert client.post("/api/items/E7/print").json() == {"printed": True}
-    assert fake.printed == [("E7", "true")]
+    assert client.post("/api/items/E7/print").status_code in (404, 405)
+    assert fake.printed == []
 
 
 def test_static_and_pwa(client):

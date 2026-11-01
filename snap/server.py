@@ -172,15 +172,6 @@ async def create_item(request: Request) -> JSONResponse:
             log.warning("Photo %s for %s failed: %s", i + 1, item_id, exc.message)
             failed_photos += 1
 
-    printed = None
-    if str(form.get("print", "")).lower() in ("1", "true", "on", "yes"):
-        try:
-            await hb(request, "GET", f"/v1/labelmaker/item/{item_id}", params={"print": "true"})
-            printed = True
-        except HomeboxError as exc:
-            log.warning("Label print for %s failed: %s", item_id, exc.message)
-            printed = False
-
     await form.close()
     return JSONResponse({
         "id": item_id,
@@ -188,13 +179,7 @@ async def create_item(request: Request) -> JSONResponse:
         "assetId": created.get("assetId"),
         "photos": len(photos) - failed_photos,
         "failedPhotos": failed_photos,
-        "printed": printed,
     }, status_code=201)
-
-
-async def print_label(request: Request) -> JSONResponse:
-    await hb(request, "GET", f"/v1/labelmaker/item/{request.path_params['id']}", params={"print": "true"})
-    return JSONResponse({"printed": True})
 
 
 # ------------------------------------------------------------------- misc
@@ -238,7 +223,6 @@ def create_app(client_factory=make_client) -> Starlette:
             Route("/api/me", me),
             Route("/api/reference", reference),
             Route("/api/items", create_item, methods=["POST"]),
-            Route("/api/items/{id}/print", print_label, methods=["POST"]),
             Mount("/static", StaticFiles(directory=STATIC_DIR), name="static"),
         ],
         exception_handlers={HomeboxError: error_handler},

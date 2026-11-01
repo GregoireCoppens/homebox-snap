@@ -3,13 +3,12 @@
 Quick photo intake for [Homebox](https://github.com/sysadminsmedia/homebox) (v0.27+) from your phone.
 
 Set a **location and tags once**, then for each item: tap the shutter a few times, type a name,
-adjust the quantity, optionally print the label, **Save**. Location and tags stay set for the next item.
+adjust the quantity, **Save**. Location and tags stay set for the next item.
 
 - Mobile web app (Dutch UI), installable on the home screen
 - Each person logs in with their own Homebox account; the session lives in an HttpOnly cookie
 - Photos are resized on the phone (max 1600 px) before upload; the first photo becomes the primary image
-- Label printing uses Homebox's own label printer setup (`/labelmaker/item/{id}?print=true`)
-- Remembers location, tags, item type and the print toggle per user on that device
+- Remembers location, tags and item type per user on that device
 
 ## Run it on the NAS
 

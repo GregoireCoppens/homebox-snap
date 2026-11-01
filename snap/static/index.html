@@ -58,11 +58,6 @@ select { appearance: none; background-image: linear-gradient(45deg, transparent 
 .stepper { display: flex; align-items: center; border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
 .stepper button { width: 48px; height: 48px; border: 0; background: var(--chip); color: var(--text); font-size: 24px; }
 .stepper input { width: 56px; text-align: center; border: 0; border-radius: 0; background: var(--bg); padding: 12px 0; }
-.toggle { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 4px 0; font-size: 16px; }
-.toggle input { width: 52px; height: 30px; appearance: none; background: var(--line); border-radius: 999px; position: relative; transition: background .15s; flex: 0 0 auto; }
-.toggle input::after { content: ""; position: absolute; top: 3px; left: 3px; width: 24px; height: 24px; border-radius: 50%; background: #fff; transition: left .15s; }
-.toggle input:checked { background: var(--accent); }
-.toggle input:checked::after { left: 25px; }
 .btn { width: 100%; padding: 16px; border: 0; border-radius: var(--radius); font: inherit; font-size: 18px; font-weight: 700;
   background: var(--accent); color: var(--accent-text); }
 .btn:disabled { opacity: .45; }
@@ -157,8 +152,6 @@ select { appearance: none; background-image: linear-gradient(45deg, transparent 
         <button type="button" id="qtyPlus" aria-label="Meer">+</button>
       </div>
     </div>
-    <div style="height:10px"></div>
-    <label class="toggle"><span>Label printen</span><input type="checkbox" id="printToggle"></label>
     <p class="err" id="saveErr"></p>
     <button class="btn" id="saveBtn" type="submit" disabled>Opslaan</button>
   </form>
@@ -174,7 +167,7 @@ select { appearance: none; background-image: linear-gradient(45deg, transparent 
 <script>
 (() => {
   const $ = id => document.getElementById(id);
-  const state = { user: "", ref: null, locationId: "", tagIds: [], typeId: "", print: false, photos: [], stream: null, saving: false };
+  const state = { user: "", ref: null, locationId: "", tagIds: [], typeId: "", photos: [], stream: null, saving: false };
   const MAX_EDGE = 1600, QUALITY = 0.85;
   let maxPhotos = 12;
 
@@ -184,7 +177,7 @@ select { appearance: none; background-image: linear-gradient(45deg, transparent 
     try { return JSON.parse(localStorage.getItem(key()) || "{}"); } catch { return {}; }
   }
   function savePrefs() {
-    try { localStorage.setItem(key(), JSON.stringify({ locationId: state.locationId, tagIds: state.tagIds, typeId: state.typeId, print: state.print })); } catch {}
+    try { localStorage.setItem(key(), JSON.stringify({ locationId: state.locationId, tagIds: state.tagIds, typeId: state.typeId })); } catch {}
   }
 
   // ---------- api ----------
@@ -239,7 +232,6 @@ select { appearance: none; background-image: linear-gradient(45deg, transparent 
     const tagIds = new Set(state.ref.tags.map(t => t.id));
     state.locationId = locIds.has(prefs.locationId) ? prefs.locationId : "";
     state.tagIds = (prefs.tagIds || []).filter(id => tagIds.has(id));
-    state.print = !!prefs.print;
     const types = state.ref.itemTypes;
     const preferredType = types.find(t => t.id === prefs.typeId) || types.find(t => /^(item|voorwerp)$/i.test(t.name)) || types[0];
     state.typeId = preferredType ? preferredType.id : "";
@@ -251,7 +243,6 @@ select { appearance: none; background-image: linear-gradient(45deg, transparent 
     $("typeSelect").innerHTML = types.map(t => `<option value="${t.id}">${escapeHtml(t.name)}</option>`).join("");
     $("typeSelect").value = state.typeId;
     $("typeWrap").classList.toggle("hidden", types.length < 2);
-    $("printToggle").checked = state.print;
     renderChips(); renderSummary(); updateSave();
     if (!state.locationId) $("stickyEditor").classList.remove("hidden");
   }
@@ -279,7 +270,6 @@ select { appearance: none; background-image: linear-gradient(45deg, transparent 
   $("tagFilter").addEventListener("input", renderChips);
   $("locSelect").addEventListener("change", e => { state.locationId = e.target.value; savePrefs(); renderSummary(); updateSave(); });
   $("typeSelect").addEventListener("change", e => { state.typeId = e.target.value; savePrefs(); });
-  $("printToggle").addEventListener("change", e => { state.print = e.target.checked; savePrefs(); });
   $("editStickyBtn").addEventListener("click", () => $("stickyEditor").classList.toggle("hidden"));
   $("closeStickyBtn").addEventListener("click", () => { $("stickyEditor").classList.add("hidden"); $("tagFilter").value = ""; renderChips(); });
 
@@ -366,15 +356,12 @@ select { appearance: none; background-image: linear-gradient(45deg, transparent 
     fd.append("locationId", state.locationId);
     if (state.typeId) fd.append("entityTypeId", state.typeId);
     state.tagIds.forEach(id => fd.append("tagIds", id));
-    if (state.print) fd.append("print", "true");
     state.photos.forEach((p, i) => fd.append("photos", p.blob, `photo-${i + 1}.jpg`));
     try {
       const res = await api("/api/items", { method: "POST", body: fd });
       let msg = `Opgeslagen: ${res.name}`;
       if (res.photos) msg += res.photos === 1 ? " · 1 foto" : ` · ${res.photos} foto's`;
       if (res.failedPhotos) msg += ` · ${res.failedPhotos} foto('s) mislukt`;
-      if (res.printed === true) msg += " · label geprint";
-      if (res.printed === false) msg += " · label printen mislukt";
       toast(msg);
       addRecent(res);
       state.photos.forEach(p => URL.revokeObjectURL(p.url)); state.photos = [];
@@ -389,17 +376,8 @@ select { appearance: none; background-image: linear-gradient(45deg, transparent 
     recent.unshift(item); recent.length = Math.min(recent.length, 5);
     $("recentCard").classList.remove("hidden");
     $("recentList").innerHTML = recent.map(r =>
-      `<li><div><div>${escapeHtml(r.name)}</div><div class="meta">${r.assetId ? escapeHtml(String(r.assetId)) + " · " : ""}${r.photos} foto${r.photos === 1 ? "" : "'s"}</div></div>
-       <button type="button" class="chip" data-print="${r.id}">Label</button></li>`).join("");
+      `<li><div><div>${escapeHtml(r.name)}</div><div class="meta">${r.assetId ? escapeHtml(String(r.assetId)) + " · " : ""}${r.photos} foto${r.photos === 1 ? "" : "'s"}</div></div></li>`).join("");
   }
-  $("recentList").addEventListener("click", async e => {
-    const b = e.target.closest("[data-print]"); if (!b) return;
-    b.disabled = true;
-    try { await api(`/api/items/${b.dataset.print}/print`, { method: "POST" }); toast("Label geprint"); }
-    catch (err) { toast(err.message); }
-    finally { b.disabled = false; }
-  });
-
   function escapeHtml(s) { return String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c])); }
 
   // ---------- boot ----------
